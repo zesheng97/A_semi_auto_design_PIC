@@ -1,0 +1,16 @@
+import tkinter as tk
+
+def on_click():
+    label.config(text="运行成功！")
+
+root = tk.Tk()
+root.title("MZI Generator GUI")
+root.geometry("300x200")
+
+label = tk.Label(root, text="点击按钮测试")
+label.pack(pady=20)
+
+button = tk.Button(root, text="运行", command=on_click)
+button.pack()
+
+root.mainloop()

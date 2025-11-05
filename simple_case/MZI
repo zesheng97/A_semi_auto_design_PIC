@@ -1,0 +1,68 @@
+import nazca as nd
+import nazca.demofab as demo
+from nazca.interconnects import Interconnect
+MZI_y_begin = 50
+MZI_X_distance = 100
+MZI_y_offset = 40
+DC_middle_length = 50
+wgw = 0.7
+ic = Interconnect(width=wgw, radius=30.0)
+shallow_DC = 1  # 1 for shallow DC, 0 for regular DC
+nd.add_layer2xsection(xsection='Wg', layer=1, accuracy=0.001) 
+nd.clear_all()
+
+with nd.Cell("Coupler") as coupler:
+    if shallow_DC == 1:
+        #Upper arm
+        demo.shallow.sinebend(distance=MZI_X_distance, offset=-MZI_y_offset, xs = 'Wg').put(0, MZI_y_begin)
+        demo.shallow.strt(length=DC_middle_length, xs = 'Wg').put()
+        demo.shallow.sinebend(distance=MZI_X_distance, offset=MZI_y_offset, xs = 'Wg').put()
+
+        # Lower arm
+        demo.shallow.sinebend(distance=MZI_X_distance, offset=MZI_y_offset, xs = 'Wg').put(0, -MZI_y_begin)
+        demo.shallow.strt(length=DC_middle_length, xs = 'Wg').put()
+        demo.shallow.sinebend(distance=MZI_X_distance, offset=-MZI_y_offset, xs = 'Wg').put()
+    
+    else:
+        # Upper arm
+        ic.sinebend(distance=MZI_X_distance, offset=-MZI_y_offset).put(0, MZI_y_begin)
+        demo.strt(length=DC_middle_length).put()
+        demo.sinebend(distance=MZI_X_distance, offset=MZI_y_offset).put()
+
+        # Lower arm
+        demo.sinebend(distance=MZI_X_distance, offset=MZI_y_offset).put(0, -MZI_y_begin)
+        demo.strt(length=DC_middle_length).put()
+        demo.sinebend(distance=MZI_X_distance, offset=-MZI_y_offset).put()
+    
+
+    # Add pins
+    # nd.Pin("a0").put(0, 50, 180)
+    # nd.Pin("a1").put(0, -50, 180)
+    # nd.Pin("b0").put(220, 50, 0)
+    # nd.Pin("b1").put(220, -50, 0)
+
+X_cas_shift = 2*MZI_X_distance + DC_middle_length
+mid_length = 50
+def MZI_build(mid_length, x_start, y_start):
+    coupler.put(x_start, y_start)
+    if shallow_DC == 1:
+        demo.shallow.strt(length=mid_length).put(X_cas_shift+x_start, MZI_y_begin+y_start)
+        demo.shallow.strt(length=mid_length).put(X_cas_shift+x_start, -MZI_y_begin+y_start)
+    coupler.put(X_cas_shift + mid_length+x_start,y_start)
+  
+MZI_build(mid_length, 0, 0)
+
+Modes = 8
+n1 = int(Modes/2)
+n2 = n1-1
+
+def generate_mesh(n1, n2):
+    
+    for j in range(n1):
+        MZI_build(mid_length, 0, j*2*MZI_y_begin)
+
+
+
+
+nd.export_plt()
+nd.export_gds(filename = f'{Modes}_modes_MZI.gds')
